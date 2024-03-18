@@ -1,0 +1,27 @@
+---
+- name: Extract Executable from PCAP
+  hosts: manage_node
+  gather_facts: no
+
+  tasks:
+    - name: Copy PCAP file to Control Node
+      ansible.builtin.copy:
+        src: /home/managenode/HOA8.1_CPE32S4/packetcapture.pcap
+        dest: /tmp/packetcapture.pcap
+      delegate_to: controlNode
+
+    - name: Extract Executable from PCAP
+      ansible.builtin.shell: |
+        tshark -r /tmp/packetcapture.pcap -Y 'http contains "MZ"' -T fields -e data > /tmp/extracted_executable.exe
+      delegate_to: controlNode
+      become: yes
+
+    - name: Verify extraction
+      ansible.builtin.command: ls /tmp/extracted_executable.exe
+      register: extraction_result
+      delegate_to: controlNode
+
+    - name: Show extraction result
+      ansible.builtin.debug:
+        var: extraction_result.stdout_lines
+
